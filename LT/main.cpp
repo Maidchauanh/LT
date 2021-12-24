@@ -12,7 +12,7 @@ struct TODO{
 	int OsLen;
 };
 
-std::vector<TODO> gTODOs;
+static std::vector<TODO> gTODOs;
 
 std::wstring getFileFullPath(LPCWSTR fileName) {
 	TCHAR** lppPart = { NULL };
@@ -112,6 +112,14 @@ void deleteLine(std::string fileName) {
 
 }
 
+// TODOOO: haven't test the write2file function yet 
+void write2file(std::string fileName, std::string line) {
+	std::ofstream file;
+	file.open(fileName, std::ios::out);
+	file << line;
+	file.close();
+}
+
 bool parseAndPrintInfo(std::string dirPath, std::string fileName) {
 	std::ifstream input;
 	std::string path = getRelPath(dirPath, fileName);
@@ -125,15 +133,17 @@ bool parseAndPrintInfo(std::string dirPath, std::string fileName) {
 
 	std::stringstream ss; 
 
+	// TODOOO: this need clean up, prevent it gets out of control and make the program more dynamic (works with different format of TODO using json file)
 	int counter = 1;
 	while (input) {
 		std::string line; 
 		std::getline(input, line);
-		// TODOOO: have little bugs with TODO and / keyword 
+		// TODO: have little bugs with TODO and / keyword 
 		size_t found = line.find("TODO");
 		if (found != std::string::npos) {
-			found = line.find("/");
+			found = line.find('/');
 			if (found != std::string::npos) {
+
 				if (found > 0) {
 					// erase til found (var)
 					line.erase(0, found);
@@ -145,7 +155,7 @@ bool parseAndPrintInfo(std::string dirPath, std::string fileName) {
 				std::string str = path  +  ":"  +  std::to_string(counter)  +  " - "  +  line  +  '\n';
 				////
 				TODO todo = { str, countOs(line.c_str())};
-				gTODOs.push_back(todo);
+				gTODOs.push_back(todo); 
 			}
 		}
 		counter++;
@@ -243,11 +253,40 @@ int main(int argc, char **argv) {
 	visitFiles(dirPath);
 	//std::cout << countOs("TODOOOOOOO:") << '\n';
 	quickSortByOsLen(gTODOs, 0, gTODOs.size()-1);
+
+	// TODOOOOOOO: change this to an enum 
+
 	if (gTODOs.size() == 0) std::cout << "No TODOs, looks like you have done all of your jobs :))\n";
-	else 
+	else {
+		enum CHOICES
+		{
+			TERMINAL_OUTPUT,
+			FILE_OUTPUT
+		};
+
+		int choice = FILE_OUTPUT;
+		std::string outputFileName = "TODOsList.txt";
+		std::ofstream myfile(outputFileName);
+
 		for (int i = gTODOs.size() - 1; i >= 0; i--) {
-			std::cout << gTODOs.at(i).line << '\n';
+			// TODOOO: have multiple choice whether to output to commandline or to file 
+			// TODOOOOOOO: use switch case instead
+			if (choice == TERMINAL_OUTPUT) {
+				std::cout << gTODOs.at(i).line << '\n';
+			}
+
+			// TODOOOOOOO: clean this up, fix the write2file function, the reason it's not working the last time is because the function is closing the file every time a line was written, may be i should use a global output file?? 
+			else if (choice == FILE_OUTPUT) {
+				//write2file(outputFileName, gTODOs.at(i).line);
+				if (myfile.is_open())
+				{
+					myfile << gTODOs.at(i).line;
+				}
+				else std::cout << "Can not openfile to write\n";
+			}
 		}
+		myfile.close();
+	}
 	system("pause");
 	return 0;
 }
