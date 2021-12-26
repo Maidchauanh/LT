@@ -111,7 +111,46 @@ int main(int argc, char **argv) {
 
 		}
 		else {
-			// TODOOOOOOO: process the file here 
+			std::ifstream input;
+			std::string fileName = argv[1];
+			input.open(fileName);
+			if (!input.is_open()) {
+				std::cerr << "Can not open file: " << fileName << '\n';
+				return false;
+			}
+
+			std::stringstream ss; 
+
+			// TODOOO: this need clean up, prevent it gets out of control and make the program more dynamic (works with different format of TODO using json file)
+			int lineNum = 1;
+			while (input) {
+				std::string line; 
+				std::getline(input, line);
+				// TODO: have little bugs with TODO and / keyword 
+				size_t found = line.find("TODO");
+				if (found != std::string::npos) {
+					found = line.find('/');
+					if (found != std::string::npos) {
+
+						if (found > 0) {
+							// erase til found (var)
+							line.erase(0, found);
+						}
+						line.erase(0, 2);
+						std::cout << lineNum << " " << line << '\n';
+						// TODO: steps of doing push into vector -> sort -> output to file 
+						// TODOOOOO: output TODOs to file 
+						//std::string str = path  +  ":"  +  std::to_string(lineNum)  +  " - "  +  line  +  '\n';
+						////
+						//TODO todo = { str, countOs(line.c_str())};
+						//TODOs.push_back(todo); 
+					}
+				}
+				lineNum++;
+			}
+
+			input.close();
+				
 		}
 	}
 
