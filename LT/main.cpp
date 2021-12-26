@@ -7,216 +7,9 @@
 #include<algorithm> 
 #include<sstream> 
 
-struct TODO{
-	std::string line;
-	int OsLen;
-};
+#include "FileHandling.hpp" // the functions in this header is not meant to be used widely since it made to work only for this program purpose 
+#include "FileProcessing.hpp"
 
-static std::vector<TODO> gTODOs;
-
-std::wstring getFileFullPath(LPCWSTR fileName) {
-	TCHAR** lppPart = { NULL };
-	TCHAR  buffer[4096] = TEXT("");
-	if (!GetFullPathNameW(fileName, 4096, buffer, lppPart)) {
-		std::cerr << "Can not get full path\n";
-		std::cerr << "Error: " << GetLastError() << '\n';
-	}
-	return (std::wstring)buffer;
-}
-
-std::string getFileFullPath(const char* fileName) {
-	char** lppPart = { NULL };
-	char  buffer[4096] = "";
-	if (!GetFullPathNameA(fileName, 4096, buffer, lppPart)) {
-		std::cerr << "Can not get full path\n";
-		std::cerr << "Error: " << GetLastError() << '\n';
-	}
-	return (std::string)buffer;
-}
-/*
-void printPath(LPCWSTR fileName) {
-std::wcout << getPath(fileName) << '\n';
-}
-*/
-
-std::string concat(const char* base, const char* top) {
-	std::string mywstring = base;
-	std::string mywstring1 = top;
-	mywstring.pop_back();
-	std::string concatted_stdstr = mywstring + mywstring1;
-	return concatted_stdstr;
-}
-
-// TODO: this is a file action and will be passed to visitFiles later 
-std::string getRelPath(std::string dirPath, std::string fileName) {
-	std::string path = concat(dirPath.c_str(), fileName.c_str()) + "\\*";
-	return path;
-}
-
-void printFileInfo(std::string fileName) {
-	std::cout << "file: ";
-	std::cout << fileName << '\n';
-}
-
-// TODO: try to make a better countOs function 
-int countOs(const char *line) {
-	int i = 0;
-	int count = 0; 
-	while (line[i] != ':') {
-		i++;
-		if(line[i] == 'O') 
-			count++;
-	}
-	return count - 1;
-}
-
-// TODO: normal swap not working so i have to use iter_swap, check this for more info: https://stackoverflow.com/questions/6224830/c-trying-to-swap-values-in-a-vector
-void swap(std::vector<TODO> &v, int position, int next_position) {
-	// assuming your vector is called v
-	std::iter_swap(v.begin() + position, v.begin() + next_position);
-	// position, next_position are the indices of the elements you want to swap
-}
-
-int partition(std::vector<TODO> &arr, int low, int high)
-{
-	TODO pivot = arr[high];
-	int left = low;
-	int right = high - 1;
-	while (true){
-		while (left <= right && arr[left].OsLen < pivot.OsLen) left++;
-		while (right >= left && arr[right].OsLen > pivot.OsLen) right--;
-		if (left >= right) break;
-		swap(arr, left, right);
-		left++;
-		right--;
-	}
-	swap(arr, left, high);
-	return left;
-}
-
-// TODO: convert this to use std::ector 
-void quickSortByOsLen(std::vector<TODO> &arr, int low, int high)
-{
-	if (low < high)
-	{
-		int pi = partition(arr, low, high);
-
-		quickSortByOsLen(arr, low, pi - 1);
-		quickSortByOsLen(arr, pi + 1, high);
-	}
-}
-
-
-void deleteLine(std::string fileName) {
-	// TODO: implement the deleteLine function 
-
-}
-
-// TODOOO: haven't test the write2file function yet 
-void write2file(std::string fileName, std::string line) {
-	std::ofstream file;
-	file.open(fileName, std::ios::out);
-	file << line;
-	file.close();
-}
-
-bool parseAndPrintInfo(std::string dirPath, std::string fileName) {
-	std::ifstream input;
-	std::string path = getRelPath(dirPath, fileName);
-	path.pop_back();
-	path.pop_back();
-	input.open(path);
-	if (!input.is_open()) {
-		std::cerr << "Can not open file: " << fileName << '\n';
-		return false;
-	}
-
-	std::stringstream ss; 
-
-	// TODOOO: this need clean up, prevent it gets out of control and make the program more dynamic (works with different format of TODO using json file)
-	int counter = 1;
-	while (input) {
-		std::string line; 
-		std::getline(input, line);
-		// TODO: have little bugs with TODO and / keyword 
-		size_t found = line.find("TODO");
-		if (found != std::string::npos) {
-			found = line.find('/');
-			if (found != std::string::npos) {
-
-				if (found > 0) {
-					// erase til found (var)
-					line.erase(0, found);
-				}
-
-				// TODO: steps of doing push into vector -> sort -> output to file 
-				// TODOOOOO: output TODOs to file 
-				line.erase(0, 2);
-				std::string str = path  +  ":"  +  std::to_string(counter)  +  " - "  +  line  +  '\n';
-				////
-				TODO todo = { str, countOs(line.c_str())};
-				gTODOs.push_back(todo); 
-			}
-		}
-		counter++;
-	}
-
-	input.close();
-	return true;
-}
-
-// use to check if it's a code file 
-bool checkFileExtension(std::string fileName) {
-	// TODO: support more file extension
-	if (fileName.substr(fileName.find_last_of(".") + 1) == "cpp") {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-
-
-// TODO: allow indentation
-// TODO: generalize the function pointer, maybe use a struct of general input  
-void visitFiles(std::string dirPath) {
-	WIN32_FIND_DATAA findFileData;
-	HANDLE hfindFile = FindFirstFileA(dirPath.c_str(), &findFileData);
-
-	if (hfindFile != INVALID_HANDLE_VALUE) {
-		while (FindNextFileA(hfindFile, &findFileData)) {
-			// not print the dot 
-			std::string fileName = findFileData.cFileName;
-			bool notADot = !(fileName[0] == '.');
-			if (notADot) {
-				// if it's a directory 
-				if (findFileData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
-					//std::cout << "dir: " << fileName << '\n';
-					//std::cout << path << '\n';
-					std::string path = getRelPath(dirPath, fileName);
-					visitFiles(path);
-
-				}
-				else { // if it's a file
-					//printFileInfo(fileName);
-					// TODO: Parse the file to find the TODOs 
-					// TODO: If it's the right format(code file) than parse it
-					// TODO: Store the code file tail (different languages) in a json file, but first let's just use a normal text file, call the file LTsettings.json which contains the file extensions to parse and the keyword and format to parse(like TODO: absc)
-							// and store the tail in a alphabetical order and use binary search to search it 
-					
-					// TODO: check how many continuos Os to indicate the importance
-					// TODO: have a database to store the TODOs, hash(maybe) to check something
-					if (checkFileExtension(fileName)) {
-						//std::string path = getRelPath(dirPath, fileName);
-						parseAndPrintInfo(dirPath, fileName);
-					}
-				}
-			}
-		}
-	}
-
-	FindClose(hfindFile);
-}
 
 void fillText(std::string line, int txtcol, int bgcol) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -225,6 +18,18 @@ void fillText(std::string line, int txtcol, int bgcol) {
 	std::cout << col << line << '\n';
 	SetConsoleTextAttribute(hConsole, 15);
 }
+
+enum CMD_OPTIONS {
+};
+
+/*
+std::string parseCmdArg(int argc, char **argv) {
+	// TODOOOO: based everything on linux command (man, arguments, help,...)
+	// TODOOOOOOO: first off, have this syntax: lt and lt directory, if lt alone list *, if lt directory than list that directory, oke??
+	if (argc == 2) {
+	}
+}
+*/
 
 int main(int argc, char **argv) {
 	// TODO: open folder and search recursively  - DONE 
@@ -241,7 +46,8 @@ int main(int argc, char **argv) {
 	// TODO: have command line flag to specify the output database name, if not then use the default name
 
 
-	// TODO: Commandline arguments options
+	// TODOOOOOOOOO: Commandline arguments options, commandline argument process have some problem 
+
 	// TODO: User manual 
 	// TODO: Add multithreading (2 threads maybe) 
 	// TODO: add a folder tree visualization (after done) 
@@ -249,44 +55,68 @@ int main(int argc, char **argv) {
 	// TODO: have history of TODOs deletion with dates and time like Git log
 	// TODO: alittle bit too slow for now but it will change later, after i optimize it 
 
-	std::string dirPath = ".\\*";
-	visitFiles(dirPath);
-	//std::cout << countOs("TODOOOOOOO:") << '\n';
-	quickSortByOsLen(gTODOs, 0, gTODOs.size()-1);
+	// Handle commandline argument right here 
 
-	// TODOOOOOOO: change this to an enum 
+	std::vector<TODO> TODOs;
 
-	if (gTODOs.size() == 0) std::cout << "No TODOs, looks like you have done all of your jobs :))\n";
-	else {
-		enum CHOICES
-		{
-			TERMINAL_OUTPUT,
-			FILE_OUTPUT
-		};
-
-		int choice = FILE_OUTPUT;
-		std::string outputFileName = "TODOsList.txt";
-		std::ofstream myfile(outputFileName);
-
-		for (int i = gTODOs.size() - 1; i >= 0; i--) {
-			// TODOOO: have multiple choice whether to output to commandline or to file 
-			// TODOOOOOOO: use switch case instead
-			if (choice == TERMINAL_OUTPUT) {
-				std::cout << gTODOs.at(i).line << '\n';
-			}
-
-			// TODOOOOOOO: clean this up, fix the write2file function, the reason it's not working the last time is because the function is closing the file every time a line was written, may be i should use a global output file?? 
-			else if (choice == FILE_OUTPUT) {
-				//write2file(outputFileName, gTODOs.at(i).line);
-				if (myfile.is_open())
-				{
-					myfile << gTODOs.at(i).line;
-				}
-				else std::cout << "Can not openfile to write\n";
-			}
-		}
-		myfile.close();
+	std::string dirPath = ".";
+	if (argc == 2) {
+		dirPath += "\\";
+		dirPath += argv[1];
 	}
+
+	WIN32_FIND_DATAA findfiledata;
+	HANDLE findfirstfile = FindFirstFileA(dirPath.c_str(), &findfiledata);
+	if (findfirstfile != INVALID_HANDLE_VALUE) {
+		if (findfiledata.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
+			std::cout << "folder" << '\n';
+			dirPath += "\\*";
+
+			visitFiles(TODOs, dirPath);
+
+			quickSortByOsLen(TODOs, 0, TODOs.size()-1);
+
+			// TODOOOOOOO: change this to an enum 
+
+			if (TODOs.size() == 0) std::cout << "No TODOs, looks like you have done all of your tasks :))\n";
+			else {
+				enum CHOICES
+				{
+					TERMINAL_OUTPUT,
+					FILE_OUTPUT
+				};
+
+				int choice = TERMINAL_OUTPUT;
+				std::string outputFileName = "TODOsList.txt";
+				std::ofstream myfile(outputFileName);
+
+				for (int i = TODOs.size() - 1; i >= 0; i--) {
+					// TODOOO: have multiple choice whether to output to commandline or to file 
+					// TODOOOOOOO: use switch case instead
+					if (choice == TERMINAL_OUTPUT) {
+						std::cout << TODOs.at(i).line << '\n';
+					}
+
+					// TODOOOOOOO: clean this up, fix the write2file function, the reason it's not working the last time is because the function is closing the file every time a line was written, may be i should use a global output file?? 
+					else if (choice == FILE_OUTPUT) {
+						//write2file(outputFileName, gTODOs.at(i).line);
+						if (myfile.is_open()) {
+							myfile << TODOs.at(i).line;
+						}
+						else std::cout << "Can not openfile to write\n";
+					}
+				}
+				myfile.close();
+			}
+
+		}
+		else {
+			// TODOOOOOOO: process the file here 
+		}
+	}
+
+	FindClose(findfirstfile);
+
 	system("pause");
 	return 0;
 }
