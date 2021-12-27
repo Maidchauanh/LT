@@ -81,10 +81,14 @@
     <ClCompile Include="FileHandling.cpp" />
     <ClCompile Include="FileProcessing.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TODO.cpp" />
+    <ClCompile Include="TODO.hpp" />
+    <ClCompile Include="TODOsProcessing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileHandling.hpp" />
     <ClInclude Include="FileProcessing.hpp" />
+    <ClInclude Include="TODOsProcessing.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

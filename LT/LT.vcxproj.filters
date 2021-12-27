@@ -24,12 +24,24 @@
     <ClCompile Include="FileProcessing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TODOsProcessing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TODO.hpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TODO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileHandling.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="FileProcessing.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TODOsProcessing.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
